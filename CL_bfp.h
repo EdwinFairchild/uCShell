@@ -80,7 +80,7 @@ CL_printMsg("Sum: %d\r\n", sum);
 
 
 */
-#include "CL_CONFIG.h"
+
 #include "stdint.h"
 #include "stdbool.h"
 #include "string.h"
