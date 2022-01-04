@@ -1,7 +1,7 @@
 #ifndef BFP_H
 #define BFP_H
 /*
-* 
+* Author:  Edwin Fairchild 2022
 * 
 * CL_cli_type cli; <-- must be global
 * 
