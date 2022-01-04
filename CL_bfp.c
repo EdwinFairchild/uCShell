@@ -14,6 +14,11 @@ char BACKSPACE = 127;
 
 //TODO: verify how delete/backspace works and is it universal?
 extern void CL_printMsg(char *msg, ...);
+
+//internal helpers
+static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
+
+
 static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help)
 {
     //register a command at index matching current number of commands
@@ -33,7 +38,10 @@ void CL_cli_init(CL_cli_type *cli)
 	cli->parseCommand = parseCMD;
 	cli->parseChar = parseChar;
 	cli->msgPtr = 0;
-	//CL_printMsg("---CLI Initizalized---\n %s", cli->prompt);
+
+	//register command to show supported commands
+	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands");
+
 
 }
 void parseChar(CL_cli_type *cli)
@@ -201,6 +209,32 @@ void parseCMD(CL_cli_type *cli)
         cli->cliMsg[i] =  NULL;
 	
 	//return pointer to handler function
+
+
+}
+
+static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
+{
+
+	//get length of the longest command: used to add padding dashes so that output is aligned
+	uint8_t len = 1;
+	for(int i = 0 ; i < CURRENT_NUM_OF_COMMANDS; i++)
+		{
+			if(strlen(cmd_list[i].command) > len)
+				len = strlen(cmd_list[i].command);
+		}
+	//print all commands
+	for(int i = 0 ; i < CURRENT_NUM_OF_COMMANDS; i++)
+	{
+
+		    //print just the command
+			CL_printMsg("[\033[91m%s\033[97m]",cmd_list[i].command);
+			//add padding dashes if the len of this command is shorter than len
+			for(int j = 0 ; j < (len-strlen(cmd_list[i].command)) ; j++)
+				CL_printMsg("-");
+			//print the help message
+			CL_printMsg("| %s\r\n", cmd_list[i].help);
+	}
 
 
 }
