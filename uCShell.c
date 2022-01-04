@@ -84,17 +84,14 @@ void parseChar(CL_cli_type *cli)
 			}
 		}
 			
-		/*	if we have NOT reached the delimiter or recevied a backspace then increment the pointer
+		/*	if we have NOT reached the delimiter or received a backspace then increment the pointer
 		 *	so the next byte is stored at the next location hence assembling the message\
 		 *	*/
 		else 
 		{
-			cli->cliMsg[cli->msgPtr] = cli->charReceived; 
-				
-				
 			if (cli->msgPtr < MESSAGE_MAX)
 			{
-				 
+				cli->cliMsg[cli->msgPtr] = cli->charReceived;
 				cli->msgPtr++;  
 			}			
 		}

@@ -145,7 +145,7 @@ typedef struct
 
 
 //---------------------| Prototypes |-----------------------------------
-static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help);
+
 void parseCMD(CL_cli_type *cli);
 void parseChar(CL_cli_type *cli);
 void CL_cli_init(CL_cli_type *cli);
