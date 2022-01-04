@@ -6,15 +6,6 @@ uint8_t CURRENT_NUM_OF_COMMANDS = 0;
 bool CLI_ACTIVE = true ; 
 char BACKSPACE = 127;
 
-//TODO: this external dependency on my own printMsg should be losely coupled 
-//and made so the driver for this CLI is passed a print function with this
-//prototype
-
-//TODO: Make a good struct based driver and completely fix this parser
-
-//TODO: verify how delete/backspace works and is it universal?
-extern void CL_printMsg(char *msg, ...);
-
 //internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
 
