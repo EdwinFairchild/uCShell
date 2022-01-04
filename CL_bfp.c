@@ -1,5 +1,5 @@
 #include "CL_bfp.h"
-#include "CL_printMsg.h"
+
 
 
 uint8_t CURRENT_NUM_OF_COMMANDS = 0; 
@@ -70,6 +70,7 @@ void parseChar(CL_cli_type *cli)
 		{
 			if (cli->msgPtr > 0)//make sure we can even decrement in the first place
 			{
+				cli->cliMsg[cli->msgPtr] = NULL;
 				cli->msgPtr--;
 				cli->cliMsg[cli->msgPtr] = NULL; 
 			}
