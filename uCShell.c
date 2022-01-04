@@ -206,7 +206,7 @@ void parseCMD(CL_cli_type *cli)
 
 	cli->parsePending = false;
     //clear buffer  to receive new messages and not have old text in there
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < MESSAGE_MAX; i++)
         cli->cliMsg[i] =  NULL;
 	
 	//return pointer to handler function
