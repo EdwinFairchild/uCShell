@@ -1,11 +1,6 @@
 #include "uCShell.h"
 
 
-//will hold all commands and later be searched for a match
-//when match is found the function in struct will be called
-newCommand_type cmd_list[MAX_NUM_OF_COMMANDS];
-
-uCShell_type uCShell ;
 
 uint8_t CURRENT_NUM_OF_COMMANDS = 0; 
 bool CLI_ACTIVE = true ; 
@@ -22,9 +17,8 @@ extern void CL_printMsg(char *msg, ...);
 
 //internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
-#define _print_prompt()	cli->print("%s",cli->prompt)
 
-extern void CL_printMsg(char *msg, ...);
+
 static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help)
 {
     //register a command at index matching current number of commands
@@ -43,8 +37,7 @@ void CL_cli_init(CL_cli_type *cli)
 	cli->registerCommand = registerCommand;
 	cli->parseCommand = parseCMD;
 	cli->parseChar = parseChar;
-	uCShell.msgPtr = 0;
-	uCShell.print = cli->print;
+	cli->msgPtr = 0;
 
 	//register command to show supported commands
 	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands");
@@ -61,7 +54,7 @@ void parseChar(CL_cli_type *cli)
 			 *	if the delimeter has been reached: 
 			 *		--stop assembling the message 
 			 *		--reset the cli pointer to point back to 
-			 *		  beggining of uCShell.cliMsg
+			 *		  beggining of cli.cliMsg 
 			 *		--reset the pointer counter 
 			 *		--set message received to true 
 			 *	
@@ -71,7 +64,7 @@ void parseChar(CL_cli_type *cli)
 		{	
 						
 			//reset temp pointer countr
-			uCShell.msgPtr = 0;
+			cli->msgPtr = 0;    
 				
 			//this flag is used to let the application know we have a command to parse
 			//do not parse anything in ISR
@@ -83,11 +76,11 @@ void parseChar(CL_cli_type *cli)
 		//and do not increment pointer, stay at that location
 		else if(cli->charReceived == BACKSPACE) 
 		{
-			if (uCShell.msgPtr > 0)//make sure we can even decrement in the first place
+			if (cli->msgPtr > 0)//make sure we can even decrement in the first place
 			{
-				uCShell.cliMsg[uCShell.msgPtr] = NULL;
-				uCShell.msgPtr--;
-				uCShell.cliMsg[uCShell.msgPtr] = NULL;
+				cli->cliMsg[cli->msgPtr] = NULL;
+				cli->msgPtr--;
+				cli->cliMsg[cli->msgPtr] = NULL; 
 			}
 		}
 			
@@ -96,10 +89,10 @@ void parseChar(CL_cli_type *cli)
 		 *	*/
 		else 
 		{
-			if (uCShell.msgPtr < MESSAGE_MAX)
+			if (cli->msgPtr < MESSAGE_MAX)
 			{
-				uCShell.cliMsg[uCShell.msgPtr] = cli->charReceived;
-				uCShell.msgPtr++;
+				cli->cliMsg[cli->msgPtr] = cli->charReceived;
+				cli->msgPtr++;  
 			}			
 		}
 	}
@@ -121,7 +114,7 @@ void parseCMD(CL_cli_type *cli)
     bool matchFound = false; 
     //retreive just the command by setting the first delimeter of strtok to 
 	//new line / enter / line feed etc...
-    token = strtok(uCShell.cliMsg," \n \r");
+    token = strtok(cli->cliMsg," \n \r");
    
 
 
@@ -174,17 +167,17 @@ void parseCMD(CL_cli_type *cli)
 	        //check if this is a request for the help msg
 	        if (*tokens_found[0] == '?')
 	        {
-		        cli->print("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
-		        _print_prompt();
+		        CL_printMsg("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
+		        CL_printMsg("%s", cli->prompt);
 		        cli->parsePending = false;
 		        break; 
 	        } 
     
             //call the command handler for the specific command that was matched
 	        //pass the number of tokens found as well as a list of the tokens
-			cli->print("\r\n");
+			CL_printMsg("\r\n");
             cmd_list[i].cmdHandler(argumentCount,tokens_found);
-            _print_prompt();
+	        CL_printMsg("%s", cli->prompt);
 	        
 	       
 	         
@@ -203,15 +196,15 @@ void parseCMD(CL_cli_type *cli)
 	if (matchFound == false)
 	{
 		
-		cli->print("\r\n\"%s\" not found!\r\n", uCShell.cliMsg);
-		_print_prompt();
+		CL_printMsg("\r\n\"%s\" not found!\r\n", cli->cliMsg);
+		CL_printMsg("%s", cli->prompt);
 	}
 		
 
 	cli->parsePending = false;
     //clear buffer  to receive new messages and not have old text in there
     for (int i = 0; i < MESSAGE_MAX; i++)
-    	uCShell.cliMsg[i] =  NULL;
+        cli->cliMsg[i] =  NULL;
 	
 	//return pointer to handler function
 
@@ -233,47 +226,47 @@ static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
 	{
 
 		    //print just the command
-			uCShell.print("[\033[91m%s\033[97m]",cmd_list[i].command);
+			CL_printMsg("[\033[91m%s\033[97m]",cmd_list[i].command);
 			//add padding dashes if the len of this command is shorter than len
 			for(int j = 0 ; j < (len-strlen(cmd_list[i].command)) ; j++)
-				uCShell.print("-");
+				CL_printMsg("-");
 			//print the help message
-			uCShell.print("| %s\r\n", cmd_list[i].help);
+			CL_printMsg("| %s\r\n", cmd_list[i].help);
 	}
 
 
 }
 
 
-//
-//void printRegister(uint32_t regVal)
-//{
-//	cli->print("Register Value: 0x%X\n\r", regVal);
-//	for (int i = 31; i >=10; i--)
-//	{
-//		cli->print("| %d ",i);
-//
-//
-//	}
-//	for (int i = 9; i >= 0; i--)
-//	{
-//		cli->print("|  %d ", i);
-//
-//
-//	}
-//
-//	cli->print("\n\r");
-//	for(int i = 0 ; i < 160 ; i++)
-//		cli->print("-");
-//
-//	cli->print("\n\r");
-//	for (int i = 31; i >= 0; i--)
-//	{
-//
-//		((regVal & (1 << i)) ? cli->print("|  X ") : cli->print("|    "));
-//
-//	}
-//	cli->print("\n\r");
-//
-//
-//}
+
+void printRegister(uint32_t regVal)
+{
+	CL_printMsg("Register Value: 0x%X\n\r", regVal);
+	for (int i = 31; i >=10; i--)
+	{	
+		CL_printMsg("| %d ",i);
+	
+
+	}
+	for (int i = 9; i >= 0; i--)
+	{	
+		CL_printMsg("|  %d ", i);
+	
+
+	}
+
+	CL_printMsg("\n\r");
+	for(int i = 0 ; i < 160 ; i++)
+		CL_printMsg("-");
+
+	CL_printMsg("\n\r");
+	for (int i = 31; i >= 0; i--)
+	{	
+	
+		((regVal & (1 << i)) ? CL_printMsg("|  X ") : CL_printMsg("|    "));
+
+	}
+	CL_printMsg("\n\r");
+
+
+}

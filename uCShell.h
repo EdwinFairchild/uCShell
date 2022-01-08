@@ -1,5 +1,5 @@
-#ifndef uCSHELL_H
-#define uCSHELL_H
+#ifndef BFP_H
+#define BFP_H
 /*
 * Author:  Edwin Fairchild 2022
 * 
@@ -88,7 +88,6 @@ CL_printMsg("Sum: %d\r\n", sum);
 
 //---------------------| variables |-------------------
 #define MAX_NUM_OF_COMMANDS 10
-//maximum allowed characters in internal buffer
 #define MESSAGE_MAX 50
 
 //this function pointer will be used to point to the function handler
@@ -105,7 +104,9 @@ typedef  void (*cmd_handler)(uint8_t num, char *values[]);
 
 }newCommand_type;
   
-
+//will hold all commands and later be searched for a match
+//when match is found the function in struct will be called
+newCommand_type cmd_list[MAX_NUM_OF_COMMANDS]; 
 
 
 //used internally to point to the registerCommand function so that it can be
@@ -119,33 +120,25 @@ typedef  void (*registerCmd)(char *cmd, char delimeter, cmd_handler handler, cha
 struct CL_cli_type;
 typedef void(*parsecmd)(struct CL_cli_type *cli);
 typedef void(*parsechar)(struct CL_cli_type *cli);
-typedef void(*print_f)(char *msg, ...);
 //control struct for the cli
 typedef struct  
 {
 	char *prompt;					//user define cli prompt
 	char delimeter;					//user defined delimeter for end of command usually \r (enter key)
-	registerCmd registerCommand;	//function for user to register commands and handlers
 	bool parsePending;				//used to let main app know a parse is pending
-	parsecmd parseCommand;
 	char charReceived;				//stores received characters
-	parsechar parseChar;
-
 	char cliMsg[MESSAGE_MAX];		//stores the complete received message
-	print_f   print;
-	uint8_t msgPtr;					//this keeps track of how much we have increment the cli.cliMsg index
+	uint8_t msgPtr;					//this keeps track of how much we have incremtned the cli.cliMsg index
+	registerCmd registerCommand;	//function for user to register commands and handlers
 
 	//void(*parsecmd)(struct cliType *cli);
+	parsecmd parseCommand;
+	parsechar parseChar;
+
 }CL_cli_type;
 
 
-//internal struct to hold things I dont want exposed to the user
-typedef struct
-{
-	char cliMsg[MESSAGE_MAX];		//stores the complete received message
-	print_f   print;
-	uint8_t msgPtr;					//this keeps track of how much we have increment the cli.cliMsg index
-}uCShell_type;
+
 
 
 
