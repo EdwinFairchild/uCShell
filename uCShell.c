@@ -1,6 +1,8 @@
 #include "uCShell.h"
 
 
+#define _print_prompt()	cli->print("%s",cli->prompt)
+#define _uCShell_print_prompt()	uCShell.print("\033[33m%s\033[m",cli->prompt)
 //will hold all commands and later be searched for a match
 //when match is found the function in struct will be called
 newCommand_type cmd_list[MAX_NUM_OF_COMMANDS];
@@ -13,10 +15,13 @@ char BACKSPACE = 127;
 
 //internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
-#define _print_prompt()	cli->print("%s",cli->prompt)
+static void cleanUp(CL_cli_type *cli);
+
+cmd_handler streamhandler = NULL;
+
 
 extern void CL_printMsg(char *msg, ...);
-static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help)
+static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help, bool stream)
 {
     //register a command at index matching current number of commands
     //this helps keep track of where to put the next registered command
@@ -25,6 +30,7 @@ static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char
     
     cmd_list[CURRENT_NUM_OF_COMMANDS].cmdHandler = handler;
 	cmd_list[CURRENT_NUM_OF_COMMANDS].help = help;
+	cmd_list[CURRENT_NUM_OF_COMMANDS].streamCommand = stream;
     CURRENT_NUM_OF_COMMANDS++;
 
 }
@@ -36,9 +42,9 @@ void CL_cli_init(CL_cli_type *cli)
 	cli->parseChar = parseChar;
 	uCShell.msgPtr = 0;
 	uCShell.print = cli->print;
-
+    uCShell.stream = false;
 	//register command to show supported commands
-	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands");
+	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
 
 
 }
@@ -68,7 +74,19 @@ void parseChar(CL_cli_type *cli)
 			//do not parse anything in ISR
 			cli->parsePending = true; 
 								
-		}	
+		}
+		//start stop delimeters for stream commands
+		else if(cli->charReceived == '[')
+		{
+			uCShell.stream = true;
+		}
+		else if(cli->charReceived == ']')
+		{
+			uCShell.stream = false;
+			uCShell.print("\r\n");
+			cleanUp(cli);
+			_uCShell_print_prompt();
+		}
 		//if backspace is received the user wants to delete previous char receveid
 		//so decrement the pointer so it points to previous char and set that char to null
 		//and do not increment pointer, stay at that location
@@ -174,12 +192,25 @@ void parseCMD(CL_cli_type *cli)
             //call the command handler for the specific command that was matched
 	        //pass the number of tokens found as well as a list of the tokens
 			cli->print("\r\n");
-            cmd_list[i].cmdHandler(argumentCount,tokens_found);
+			//check if command found is a stream command
+			if(cmd_list[i].streamCommand == true)
+			{
+				uCShell.stream = true ;
+				streamhandler = cmd_list[i].cmdHandler ;
+				streamhandler(0,NULL);
+
+
+			}
+			else //all other commands
+			{
+				cmd_list[i].cmdHandler(argumentCount,tokens_found);
+			}
             _print_prompt();
 	        
 	       
 	         
         }
+        //TODO: think of a cleaner way to handle this instead of this matchFound flag
 	    if (matchFound == true)
 	    {
 		    //break out of for loop, no need to cycle through rest of commands
@@ -187,7 +218,7 @@ void parseCMD(CL_cli_type *cli)
 		    break; 
 	    }
 	   
-    }
+    }//end of cycling through commands looking for match
 
 	
 	
@@ -199,16 +230,35 @@ void parseCMD(CL_cli_type *cli)
 	}
 		
 
-	cli->parsePending = false;
-    //clear buffer  to receive new messages and not have old text in there
-    for (int i = 0; i < MESSAGE_MAX; i++)
-    	uCShell.cliMsg[i] =  NULL;
+	cleanUp(cli);
 	
 	//return pointer to handler function
 
 
 }
 
+static void cleanUp(CL_cli_type *cli)
+{
+    cli->parsePending = false;
+    //clear buffer  to receive new messages and not have old text in there
+    for (int i = 0; i < MESSAGE_MAX; i++)
+    	uCShell.cliMsg[i] =  NULL;
+    uCShell.msgPtr = 0;
+
+}
+void uCShell_run(CL_cli_type *cli)
+{
+    if(uCShell.stream == true)
+    {
+            //call stream function handler
+            streamhandler(0,NULL);
+
+    }
+    else if (cli->parsePending == true)
+    {
+        cli->parseCommand(cli);
+    }
+}
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
 {
 

@@ -102,6 +102,7 @@ typedef  void (*cmd_handler)(uint8_t num, char *values[]);
     char            delimeter ;
     cmd_handler     cmdHandler;
 	const char      *help;
+	bool 			streamCommand;
 
 }newCommand_type;
   
@@ -112,7 +113,7 @@ typedef  void (*cmd_handler)(uint8_t num, char *values[]);
 //called from within the struct...this is because of my personal taste to
 //do everything from within the struct, could easily just have the user call
 //the function and remove the static attribute 
-typedef  void (*registerCmd)(char *cmd, char delimeter, cmd_handler handler, char *help);
+typedef  void (*registerCmd)(char *cmd, char delimeter, cmd_handler handler, char *help, bool stream);
 
 
 
@@ -145,6 +146,7 @@ typedef struct
 	char cliMsg[MESSAGE_MAX];		//stores the complete received message
 	print_f   print;
 	uint8_t msgPtr;					//this keeps track of how much we have increment the cli.cliMsg index
+	bool stream;
 }uCShell_type;
 
 
@@ -157,7 +159,7 @@ void parseCMD(CL_cli_type *cli);
 void parseChar(CL_cli_type *cli);
 void CL_cli_init(CL_cli_type *cli);
 void printRegister(uint32_t regVal);
-
+void uCShell_run(CL_cli_type *cli);
 
 
 
