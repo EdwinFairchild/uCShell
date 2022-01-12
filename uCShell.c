@@ -16,11 +16,10 @@ char BACKSPACE = 127;
 //internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
 static void cleanUp(CL_cli_type *cli);
+void printBanner(void);
+cmd_handler stream_Handler_ptr = NULL;
 
-cmd_handler streamhandler = NULL;
 
-
-extern void CL_printMsg(char *msg, ...);
 static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help, bool stream)
 {
     //register a command at index matching current number of commands
@@ -45,6 +44,8 @@ void CL_cli_init(CL_cli_type *cli)
     uCShell.stream = false;
 	//register command to show supported commands
 	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
+	printBanner();
+	_uCShell_print_prompt();
 
 
 }
@@ -76,7 +77,7 @@ void parseChar(CL_cli_type *cli)
 								
 		}
 		//start stop delimeters for stream commands
-		else if(cli->charReceived == '[')
+		else if(cli->charReceived == '[' && stream_Handler_ptr != NULL)
 		{
 			uCShell.stream = true;
 		}
@@ -196,8 +197,8 @@ void parseCMD(CL_cli_type *cli)
 			if(cmd_list[i].streamCommand == true)
 			{
 				uCShell.stream = true ;
-				streamhandler = cmd_list[i].cmdHandler ;
-				streamhandler(0,NULL);
+				stream_Handler_ptr = cmd_list[i].cmdHandler ;
+				stream_Handler_ptr(0,NULL);
 
 
 			}
@@ -251,7 +252,7 @@ void uCShell_run(CL_cli_type *cli)
     if(uCShell.stream == true)
     {
             //call stream function handler
-            streamhandler(0,NULL);
+    	stream_Handler_ptr(0,NULL);
 
     }
     else if (cli->parsePending == true)
@@ -285,36 +286,31 @@ static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
 
 }
 
+void printBanner(void)
+{
 
-//
-//void printRegister(uint32_t regVal)
-//{
-//	cli->print("Register Value: 0x%X\n\r", regVal);
-//	for (int i = 31; i >=10; i--)
-//	{
-//		cli->print("| %d ",i);
-//
-//
-//	}
-//	for (int i = 9; i >= 0; i--)
-//	{
-//		cli->print("|  %d ", i);
-//
-//
-//	}
-//
-//	cli->print("\n\r");
-//	for(int i = 0 ; i < 160 ; i++)
-//		cli->print("-");
-//
-//	cli->print("\n\r");
-//	for (int i = 31; i >= 0; i--)
-//	{
-//
-//		((regVal & (1 << i)) ? cli->print("|  X ") : cli->print("|    "));
-//
-//	}
-//	cli->print("\n\r");
-//
-//
-//}
+	uCShell.print("\r\n\r\n");
+	uCShell.print("               .cxOOxc'.                              .'lxOOxc.   \r\n");
+	uCShell.print("              .kWMMMMMN0d;.                        .;d0NMMMMMWk.  \r\n");
+	uCShell.print("              ;XMMMMMMMMMWKxc'.                 'ckKWMMMMMMMWKd.  \r\n");
+	uCShell.print("              ;XMMMMMMMMMMMMMNOo;.          .;o0NMMMMMMMMNOo;.    \r\n");
+	uCShell.print("              ;XMMMMW0kKWMMMMMMMWKxc'     ;xKWMMMMMMMWKxc'    .   \r\n");
+	uCShell.print("              ;XMMMMNl .;o0NMMMMMMMMNOoc;.,cxKWMMMN0d;.    .cxk,  \r\n");
+	uCShell.print("              ;XMMMMWd.   .'ckXWMMMMMMMMWKxc,':odc'.   .,lOXWMX;  \r\n");
+	uCShell.print("              ;XMMMMMWKd:.    .:d0NMMMMMMMMMNOo;.   .;d0WMMMMMX;  \r\n");
+	uCShell.print("              ;XMMMMMMMMWXkl,.   .,lkXWMMMMMMMMWKx:'.;d0NMMMMNO'  \r\n");
+	uCShell.print("              ;XMMMMMMMMMMMMN0d:.    .:ld0NMMMMMMMWXOl;',lxkl,.   \r\n");
+	uCShell.print("              ;XMMMMWXKWMMMMMMMWXkl,.    .,lkXWMMMMMMMWKd:'.      \r\n");
+	uCShell.print("              ;XMMMMWo.,oOXWMMMMMMMN0d:,.    .:d0NMMMMMMMWXkl,.   \r\n");
+	uCShell.print("              ;XMMMMWd.   'cxKWMMMMMMMWWXkl'.   .,lOXWMMMMMMMNk'  \r\n");
+	uCShell.print("              ;XMMMMMNOo;.   .;oONMMMMMMMMWN0d;.    .cxKWMMMMMX;  \r\n");
+	uCShell.print("              ,0WMMMMMMMWKxc'    'cxKWMMMMMMMMWKkc'.   .;oONWW0,  \r\n");
+	uCShell.print("               .:d0NMMMMMMMWXOo,.   .;oxONMMMMMMMMNOo;.    ':;.   \r\n");
+	uCShell.print("                  .,lkXWMMMMMMMWKd:.     'cxKWMMMMMMMWKl.         \r\n");
+	uCShell.print("                      .:d0NMMMMMMMWXkl,..   .;d0NMMN0d:.          \r\n");
+	uCShell.print("                         .,lkXWMMMMMMMNX0d:.   .'cc,.             \r\n");
+	uCShell.print("                             .:d0NMMMMMMMMWXx,                    \r\n");
+	uCShell.print("                                .,oOXWMMWXOl,.                    \r\n");
+	uCShell.print("                                    .;::;.                        \r\n\r\n");
+	uCShell.print("                        uCShell : Edwin Fairchild 2022\r\n\r\n");
+}
