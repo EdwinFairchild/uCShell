@@ -84,7 +84,7 @@ CL_printMsg("Sum: %d\r\n", sum);
 #include "stdint.h"
 #include "stdbool.h"
 #include "string.h"
-
+#include "uCShell_Config.h"
 
 //---------------------| variables |-------------------
 #define MAX_NUM_OF_COMMANDS 10
@@ -160,7 +160,7 @@ void parseChar(CL_cli_type *cli);
 void CL_cli_init(CL_cli_type *cli);
 void printRegister(uint32_t regVal);
 void uCShell_run(CL_cli_type *cli);
-
+bool is_uCShell_streaming(void);
 
 
 #endif

@@ -2,7 +2,11 @@
 
 
 #define _print_prompt()	cli->print("%s",cli->prompt)
+#if USE_COLORS
 #define _uCShell_print_prompt()	uCShell.print("\033[33m%s\033[m",cli->prompt)
+#else
+#define _uCShell_print_prompt()	uCShell.print("%s",cli->prompt)
+#endif
 //will hold all commands and later be searched for a match
 //when match is found the function in struct will be called
 newCommand_type cmd_list[MAX_NUM_OF_COMMANDS];
@@ -43,7 +47,7 @@ void CL_cli_init(CL_cli_type *cli)
 	uCShell.print = cli->print;
     uCShell.stream = false;
 	//register command to show supported commands
-	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
+	cli->registerCommand("lc", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
 	printBanner();
 	_uCShell_print_prompt();
 
@@ -180,7 +184,7 @@ void parseCMD(CL_cli_type *cli)
 					argumentCount++;
 				}
 	        }
-
+#if !USING_WINDOWS //currently have issue with windows
 	        //check if this is a request for the help msg
 	        if (*tokens_found[0] == '?')
 	        {
@@ -190,9 +194,12 @@ void parseCMD(CL_cli_type *cli)
 		        break; 
 	        } 
     
+#endif
             //call the command handler for the specific command that was matched
 	        //pass the number of tokens found as well as a list of the tokens
-			cli->print("\r\n");
+			#if !USING_WINDOWS
+			cli->print("\r\n"); 
+			#endif
 			//check if command found is a stream command
 			if(cmd_list[i].streamCommand == true)
 			{
@@ -260,6 +267,10 @@ void uCShell_run(CL_cli_type *cli)
         cli->parseCommand(cli);
     }
 }
+bool is_uCShell_streaming(void)
+{
+	return uCShell.stream;
+}
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
 {
 
@@ -270,18 +281,24 @@ static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
 			if(strlen(cmd_list[i].command) > len)
 				len = strlen(cmd_list[i].command);
 		}
+	uCShell.print("\r\n");
 	//print all commands
 	for(int i = 0 ; i < CURRENT_NUM_OF_COMMANDS; i++)
 	{
 
 		    //print just the command
+			#if USE_COLORS
 			uCShell.print("[\033[91m%s\033[97m]",cmd_list[i].command);
+			#else
+			uCShell.print("[%s]",cmd_list[i].command);
+			#endif
 			//add padding dashes if the len of this command is shorter than len
 			for(int j = 0 ; j < (len-strlen(cmd_list[i].command)) ; j++)
 				uCShell.print("-");
 			//print the help message
 			uCShell.print("| %s\r\n", cmd_list[i].help);
 	}
+	uCShell.print("\r\n");
 
 
 }
