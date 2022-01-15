@@ -47,7 +47,11 @@ void CL_cli_init(CL_cli_type *cli)
 	uCShell.print = cli->print;
     uCShell.stream = false;
 	//register command to show supported commands
+	#if USING_WINDOWS
 	cli->registerCommand("lc", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
+	#else
+	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
+	#endif
 	printBanner();
 	_uCShell_print_prompt();
 

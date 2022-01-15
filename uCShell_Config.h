@@ -1,7 +1,7 @@
 #ifndef uCSHELL_CONFIG_H
 #define uCSHELL_CONFIG_H
 
-#define USING_WINDOWS 1
+#define USING_WINDOWS 0
 #define USE_COLORS 0
 /* TODO :
  *
