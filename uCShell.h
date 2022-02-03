@@ -85,7 +85,7 @@ CL_printMsg("Sum: %d\r\n", sum);
 #include "stdbool.h"
 #include "stdint.h"
 #include "string.h"
-
+#include "uCShell_Config.h"
 //---------------------| variables |-------------------
 #define MAX_NUM_OF_COMMANDS 10
 // maximum allowed characters in internal buffer
