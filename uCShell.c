@@ -1,11 +1,13 @@
 #include "uCShell.h"
 
 
-#define _print_prompt()	cli->print("%s",cli->prompt)
+
 #if USE_COLORS
 #define _uCShell_print_prompt()	uCShell.print("\033[33m%s\033[m",cli->prompt)
+#define _print_prompt()	cli->print("\033[33m%s\033[m",cli->prompt)
 #else
 #define _uCShell_print_prompt()	uCShell.print("%s",cli->prompt)
+#define _print_prompt()	cli->print("%s",cli->prompt)
 #endif
 //will hold all commands and later be searched for a match
 //when match is found the function in struct will be called
@@ -37,14 +39,18 @@ static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char
     CURRENT_NUM_OF_COMMANDS++;
 
 }
-void CL_cli_init(CL_cli_type *cli)
+void CL_cli_init(CL_cli_type *cli, char *prompt , print_f print_function )
 {
 //since structs 
 	cli->registerCommand = registerCommand;
 	cli->parseCommand = parseCMD;
 	cli->parseChar = parseChar;
+	cli->delimeter = '\r';
+	cli->print = print_function;
+	cli->prompt = prompt;
 	uCShell.msgPtr = 0;
-	uCShell.print = cli->print;
+
+	uCShell.print = print_function;
     uCShell.stream = false;
 	//register command to show supported commands
 	#if USING_WINDOWS

@@ -157,7 +157,7 @@ typedef struct
 
 void parseCMD(CL_cli_type *cli);
 void parseChar(CL_cli_type *cli);
-void CL_cli_init(CL_cli_type *cli);
+void CL_cli_init(CL_cli_type *cli, char *prompt , print_f print_function );
 void printRegister(uint32_t regVal);
 void uCShell_run(CL_cli_type *cli);
 bool is_uCShell_streaming(void);
