@@ -8,6 +8,8 @@
 /* TODO :
  *
  * BUG : not checking for max message size
+         say what?
+         
  *
  */
 
