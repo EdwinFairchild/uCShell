@@ -269,6 +269,11 @@ static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
     }
 }
 
+bool is_uCShell_streaming(void)
+{
+    return uCShell.stream;
+}
+
 void printBanner(void)
 {
     uCShell.print("\r\n\r\n");
