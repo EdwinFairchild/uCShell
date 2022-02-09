@@ -115,7 +115,11 @@ typedef void (*registerCmd)(char *cmd, char delimeter, cmd_handler handler, char
 struct CL_cli_type;
 typedef void (*parsecmd)(struct CL_cli_type *cli);
 typedef void (*parsechar)(struct CL_cli_type *cli);
+#if USING_WINDOWS
+typedef int (*print_f)(const char *__restrict __fmt, ...);
+#else
 typedef void (*print_f)(char *msg, ...);
+#endif
 // control struct for the cli
 typedef struct
 {
