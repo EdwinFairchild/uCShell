@@ -158,8 +158,51 @@ void parseCMD(CL_cli_type *cli)
             // start going through the string tokeninzing and using the delimeter
             while (token != NULL)
             {
-                // get the next token
-                token = strtok(NULL, &delimeter);
+	            //get the next token
+                token = strtok(NULL,&delimeter);
+	            
+	            //check if the first token is a "?" 
+	            
+	            
+	            if (token == NULL) // if result is NULL "endof string" then we are done
+		            {
+                   
+			            break;//outof while loop
+		            }
+	            else
+	            {
+		            //add the token to an array so we can send it to the handler
+					//remember these are all pointers
+					//to the original cliMsg
+					tokens_found[argumentCount] = token;
+					//increment argument counter so we can also tell the handler 
+					//how many arguments to expect
+					argumentCount++;
+				}
+	        }
+
+	        //check if this is a request for the help msg
+            //only if arguments is non-zero
+	        if (argumentCount &&*tokens_found[0] == '?')
+	        {
+		        cli->print("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
+		        _print_prompt();
+		        cli->parsePending = false;
+		        break; 
+	        } 
+    
+
+            //call the command handler for the specific command that was matched
+	        //pass the number of tokens found as well as a list of the tokens
+			#if !USING_WINDOWS
+			cli->print("\r\n"); 
+			#endif
+			//check if command found is a stream command
+			if(cmd_list[i].streamCommand == true)
+			{
+				uCShell.stream = true ;
+				stream_Handler_ptr = cmd_list[i].cmdHandler ;
+				stream_Handler_ptr(0,NULL);
 
                 // check if the first token is a "?"
 
@@ -180,7 +223,7 @@ void parseCMD(CL_cli_type *cli)
             }
 
             // check if this is a request for the help msg
-            if (*tokens_found[0] == '?')
+            if (argumentCount && *tokens_found[0] == '?')
             {
                 cli->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
                 _print_prompt();
