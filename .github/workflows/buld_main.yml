@@ -20,9 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup Bazelisk
-        uses: bazelbuild/setup-bazelisk@v1
-
       - name: Build_main
         run: |
           gcc main.c uCShell.c -o main
@@ -30,4 +27,4 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: ./*.revfw*
+          path: ./*.exe*
