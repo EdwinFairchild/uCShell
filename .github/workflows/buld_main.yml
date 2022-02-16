@@ -14,7 +14,7 @@ defaults:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -25,3 +25,7 @@ jobs:
       - name: Build_main
         run: |
           gcc main.c uCShell.c -o main
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+        path: ./*.exe*
