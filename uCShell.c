@@ -133,7 +133,12 @@ void parseCMD(CL_cli_type *cli)
     // retreive just the command by setting the first delimeter of strtok to
     // new line / enter / line feed etc...
     token = strtok(uCShell.cliMsg, " \n \r");
-
+    if(token == NULL)
+    {
+        cleanUp(ptr_ucShell);
+        _print_prompt();
+        return;
+    }
     //--------------------------------------| Strcmp based search
     //|---------------------------------
 
