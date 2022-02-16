@@ -140,7 +140,7 @@ void parseCMD(uCShell_type *ptr_ucShell)
     bool matchFound = false;
     // retreive just the command by setting the first delimeter of strtok to
     // new line / enter / line feed etc...
-    token = strtok(uCShell.cliMsg, " \n \r");
+    token = strtok(uCShell.ucshellMsg, " \n \r");
     if(token == NULL)
     {
         cleanUp(ptr_ucShell);
