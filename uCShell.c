@@ -48,13 +48,10 @@ void CL_cli_init(CL_cli_type *cli, char *prompt, print_f print_function)
 
     uCShell.print = print_function;
     uCShell.stream = false;
-	//register command to show supported commands
-	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
-	
-	printBanner();
-	_uCShell_print_prompt();
-
-
+    // register command to show supported commands
+    cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
+    printBanner();
+    _uCShell_print_prompt();
 }
 void parseChar(CL_cli_type *cli)
 {
@@ -207,6 +204,8 @@ void parseCMD(CL_cli_type *cli)
 				stream_Handler_ptr = cmd_list[i].cmdHandler ;
 				stream_Handler_ptr(0,NULL);
 
+                // check if the first token is a "?"
+
                 if (token == NULL) // if result is NULL "endof string" then we are done
                 {
                     break; // outof while loop
@@ -290,40 +289,32 @@ void uCShell_run(CL_cli_type *cli)
         cli->parseCommand(cli);
     }
 }
-bool is_uCShell_streaming(void)
-{
-	return uCShell.stream;
-}
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
 {
+    // get length of the longest command: used to add padding dashes so that
+    // output is aligned
+    uint8_t len = 1;
+    for (int i = 0; i < CURRENT_NUM_OF_COMMANDS; i++)
+    {
+        if (strlen(cmd_list[i].command) > len)
+            len = strlen(cmd_list[i].command);
+    }
+    // print all commands
+    for (int i = 0; i < CURRENT_NUM_OF_COMMANDS; i++)
+    {
+        // print just the command
+        uCShell.print("[\033[91m%s\033[97m]", cmd_list[i].command);
+        // add padding dashes if the len of this command is shorter than len
+        for (int j = 0; j < (len - strlen(cmd_list[i].command)); j++)
+            uCShell.print("-");
+        // print the help message
+        uCShell.print("| %s\r\n", cmd_list[i].help);
+    }
+}
 
-	//get length of the longest command: used to add padding dashes so that output is aligned
-	uint8_t len = 1;
-	for(int i = 0 ; i < CURRENT_NUM_OF_COMMANDS; i++)
-		{
-			if(strlen(cmd_list[i].command) > len)
-				len = strlen(cmd_list[i].command);
-		}
-	uCShell.print("\r\n");
-	//print all commands
-	for(int i = 0 ; i < CURRENT_NUM_OF_COMMANDS; i++)
-	{
-
-		    //print just the command
-			#if USE_COLORS
-			uCShell.print("[\033[91m%s\033[97m]",cmd_list[i].command);
-			#else
-			uCShell.print("[%s]",cmd_list[i].command);
-			#endif
-			//add padding dashes if the len of this command is shorter than len
-			for(int j = 0 ; j < (len-strlen(cmd_list[i].command)) ; j++)
-				uCShell.print("-");
-			//print the help message
-			uCShell.print("| %s\r\n", cmd_list[i].help);
-	}
-	uCShell.print("\r\n");
-
-
+bool is_uCShell_streaming(void)
+{
+    return uCShell.stream;
 }
 
 void printBanner(void)
