@@ -11,7 +11,16 @@
 // when match is found the function in struct will be called
 newCommand_type cmd_list[MAX_NUM_OF_COMMANDS];
 
-uCShell_type uCShell;
+// internal struct to hold things I dont want exposed to the user
+typedef struct
+{
+    char cliMsg[MESSAGE_MAX]; // stores the complete received message
+    print_f print;
+    uint8_t msgPtr; // this keeps track of how much we have increment the cli.cliMsg index
+    bool stream;
+} prv_uCShell_type;
+
+prv_uCShell_type uCShell;
 
 uint8_t CURRENT_NUM_OF_COMMANDS = 0;
 bool CLI_ACTIVE = true;
@@ -19,7 +28,7 @@ char BACKSPACE = 127;
 
 // internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
-static void cleanUp(CL_cli_type *cli);
+static void cleanUp(uCShell_type *cli);
 void printBanner(void);
 cmd_handler stream_Handler_ptr = NULL;
 
@@ -35,7 +44,7 @@ static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char
     cmd_list[CURRENT_NUM_OF_COMMANDS].streamCommand = stream;
     CURRENT_NUM_OF_COMMANDS++;
 }
-void CL_cli_init(CL_cli_type *cli, char *prompt, print_f print_function)
+void CL_cli_init(uCShell_type *cli, char *prompt, print_f print_function)
 {
     // since structs
     cli->registerCommand = registerCommand;
@@ -53,7 +62,7 @@ void CL_cli_init(CL_cli_type *cli, char *prompt, print_f print_function)
     printBanner();
     _uCShell_print_prompt();
 }
-void parseChar(CL_cli_type *cli)
+void parseChar(uCShell_type *cli)
 {
     /*	If cli.parsePending is already true then it means a message is still
         parsing , this current data will be ginored */
@@ -119,7 +128,7 @@ void parseChar(CL_cli_type *cli)
     }
 }
 
-void parseCMD(CL_cli_type *cli)
+void parseCMD(uCShell_type *cli)
 {
     char *token;
     // used retreive the command and tokens via strtok
@@ -269,7 +278,7 @@ void parseCMD(CL_cli_type *cli)
     // return pointer to handler function
 }
 
-static void cleanUp(CL_cli_type *cli)
+static void cleanUp(uCShell_type *cli)
 {
     cli->parsePending = false;
     // clear buffer  to receive new messages and not have old text in there
@@ -277,7 +286,7 @@ static void cleanUp(CL_cli_type *cli)
         uCShell.cliMsg[i] = NULL;
     uCShell.msgPtr = 0;
 }
-void uCShell_run(CL_cli_type *cli)
+void uCShell_run(uCShell_type *cli)
 {
     if (uCShell.stream == true)
     {
