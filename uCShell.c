@@ -81,7 +81,7 @@ void parseChar(uCShell_type *ptr_ucShell)
         {
             // reset temp pointer countr
             uCShell.msgPtr = 0;
-
+        
             // this flag is used to let the application know we have a command to
             // parse do not parse anything in ISR
             ptr_ucShell->parsePending = true;
