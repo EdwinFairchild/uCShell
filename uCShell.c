@@ -303,7 +303,11 @@ static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
     for (int i = 0; i < CURRENT_NUM_OF_COMMANDS; i++)
     {
         // print just the command
+#if USE_COLORS
         uCShell.print("[\033[91m%s\033[97m]", cmd_list[i].command);
+#else
+        uCShell.print("[%s]", cmd_list[i].command);
+#endif
         // add padding dashes if the len of this command is shorter than len
         for (int j = 0; j < (len - strlen(cmd_list[i].command)); j++)
             uCShell.print("-");
