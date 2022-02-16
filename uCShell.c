@@ -1,11 +1,11 @@
 #include "uCShell.h"
 
 #if USE_COLORS
-#define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", cli->prompt)
-#define _print_prompt() cli->print("\033[33m%s\033[m", cli->prompt)
+#define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", ptr_ucShell->prompt)
+#define _print_prompt() ptr_ucShell->print("\033[33m%s\033[m", ptr_ucShell->prompt)
 #else
-#define _uCShell_print_prompt() uCShell.print("%s", cli->prompt)
-#define _print_prompt() cli->print("%s", cli->prompt)
+#define _uCShell_print_prompt() uCShell.print("%s", ptr_ucShell->prompt)
+#define _print_prompt() ptr_ucShell->print("%s", ptr_ucShell->prompt)
 #endif
 // will hold all commands and later be searched for a match
 // when match is found the function in struct will be called
@@ -14,9 +14,9 @@ newCommand_type cmd_list[MAX_NUM_OF_COMMANDS];
 // internal struct to hold things I dont want exposed to the user
 typedef struct
 {
-    char cliMsg[MESSAGE_MAX]; // stores the complete received message
+    char ucshellMsg[MESSAGE_MAX]; // stores the complete received message
     print_f print;
-    uint8_t msgPtr; // this keeps track of how much we have increment the cli.cliMsg index
+    uint8_t msgPtr; // this keeps track of how much we have increment the cli.ucshellMsg index
     bool stream;
 } prv_uCShell_type;
 
@@ -28,7 +28,7 @@ char BACKSPACE = 127;
 
 // internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
-static void cleanUp(uCShell_type *cli);
+static void cleanUp(uCShell_type *ptr_ucShell);
 void printBanner(void);
 cmd_handler stream_Handler_ptr = NULL;
 
@@ -38,77 +38,76 @@ static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char
     // this helps keep track of where to put the next registered command
     cmd_list[CURRENT_NUM_OF_COMMANDS].command = cmd;
     cmd_list[CURRENT_NUM_OF_COMMANDS].delimeter = delimeter;
-
     cmd_list[CURRENT_NUM_OF_COMMANDS].cmdHandler = handler;
     cmd_list[CURRENT_NUM_OF_COMMANDS].help = help;
     cmd_list[CURRENT_NUM_OF_COMMANDS].streamCommand = stream;
     CURRENT_NUM_OF_COMMANDS++;
 }
-void CL_cli_init(uCShell_type *cli, char *prompt, print_f print_function)
+void CL_cli_init(uCShell_type *ptr_ucShell, char *prompt, print_f print_function)
 {
     // since structs
-    cli->registerCommand = registerCommand;
-    cli->parseCommand = parseCMD;
-    cli->parseChar = parseChar;
-    cli->delimeter = '\r';
-    cli->print = print_function;
-    cli->prompt = prompt;
+    ptr_ucShell->registerCommand = registerCommand;
+    ptr_ucShell->parseCommand = parseCMD;
+    ptr_ucShell->parseChar = parseChar;
+    ptr_ucShell->delimeter = '\r';
+    ptr_ucShell->print = print_function;
+    ptr_ucShell->prompt = prompt;
     uCShell.msgPtr = 0;
 
     uCShell.print = print_function;
     uCShell.stream = false;
     // register command to show supported commands
-    cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
+    ptr_ucShell->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
     printBanner();
     _uCShell_print_prompt();
 }
-void parseChar(uCShell_type *cli)
+void parseChar(uCShell_type *ptr_ucShell)
 {
-    /*	If cli.parsePending is already true then it means a message is still
+    /*	If ptr_ucShell.parsePending is already true then it means a message is still
         parsing , this current data will be ginored */
-    if (cli->parsePending == false)
+    if (ptr_ucShell->parsePending == false)
     {
         /*
          *	if the delimeter has been reached:
          *		--stop assembling the message
          *		--reset the cli pointer to point back to
-         *		  beggining of uCShell.cliMsg
+         *		  beggining of uCShell.ucshellMsg
          *		--reset the pointer counter
          *		--set message received to true
          *
          */
 
-        if (cli->charReceived == cli->delimeter || cli->charReceived == '\n')
+        if (ptr_ucShell->charReceived == ptr_ucShell->delimeter || ptr_ucShell->charReceived == '\n')
         {
             // reset temp pointer countr
             uCShell.msgPtr = 0;
 
             // this flag is used to let the application know we have a command to
             // parse do not parse anything in ISR
-            cli->parsePending = true;
+            ptr_ucShell->parsePending = true;
         }
         // start stop delimeters for stream commands
-        else if (cli->charReceived == '[' && stream_Handler_ptr != NULL)
+        else if (ptr_ucShell->charReceived == '[' && stream_Handler_ptr != NULL)
         {
             uCShell.stream = true;
         }
-        else if (cli->charReceived == ']')
+        else if (ptr_ucShell->charReceived == ']')
         {
             uCShell.stream = false;
             uCShell.print("\r\n");
-            cleanUp(cli);
+            cleanUp(ptr_ucShell);
             _uCShell_print_prompt();
         }
         // if backspace is received the user wants to delete previous char receveid
         // so decrement the pointer so it points to previous char and set that char
         // to null and do not increment pointer, stay at that location
-        else if (cli->charReceived == BACKSPACE)
+        else if (ptr_ucShell->charReceived == BACKSPACE)
         {
             if (uCShell.msgPtr > 0) // make sure we can even decrement in the first place
             {
-                uCShell.cliMsg[uCShell.msgPtr] = NULL;
+                uCShell.ucshellMsg[uCShell.msgPtr] = NULL;
                 uCShell.msgPtr--;
-                uCShell.cliMsg[uCShell.msgPtr] = NULL;
+                uCShell.ucshellMsg[uCShell.msgPtr] = NULL;
             }
         }
 
@@ -121,14 +120,14 @@ void parseChar(uCShell_type *cli)
         {
             if (uCShell.msgPtr < MESSAGE_MAX)
             {
-                uCShell.cliMsg[uCShell.msgPtr] = cli->charReceived;
+                uCShell.ucshellMsg[uCShell.msgPtr] = ptr_ucShell->charReceived;
                 uCShell.msgPtr++;
             }
         }
     }
 }
 
-void parseCMD(uCShell_type *cli)
+void parseCMD(uCShell_type *ptr_ucShell)
 {
     char *token;
     // used retreive the command and tokens via strtok
@@ -141,7 +140,7 @@ void parseCMD(uCShell_type *cli)
     bool matchFound = false;
     // retreive just the command by setting the first delimeter of strtok to
     // new line / enter / line feed etc...
-    token = strtok(uCShell.cliMsg, " \n \r");
+    token = strtok(uCShell.ucshellMsg, " \n \r");
 
     //--------------------------------------| Strcmp based search
     //|---------------------------------
@@ -182,7 +181,7 @@ void parseCMD(uCShell_type *cli)
 	            {
 		            //add the token to an array so we can send it to the handler
 					//remember these are all pointers
-					//to the original cliMsg
+					//to the original ucshellMsg
 					tokens_found[argumentCount] = token;
 					//increment argument counter so we can also tell the handler 
 					//how many arguments to expect
@@ -194,9 +193,9 @@ void parseCMD(uCShell_type *cli)
             //only if arguments is non-zero
 	        if (argumentCount &&*tokens_found[0] == '?')
 	        {
-		        cli->print("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
+		        ptr_ucShell->print("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
 		        _print_prompt();
-		        cli->parsePending = false;
+		        ptr_ucShell->parsePending = false;
 		        break; 
 	        } 
     
@@ -204,7 +203,7 @@ void parseCMD(uCShell_type *cli)
             //call the command handler for the specific command that was matched
 	        //pass the number of tokens found as well as a list of the tokens
 			#if !USING_WINDOWS
-			cli->print("\r\n"); 
+			ptr_ucShell->print("\r\n"); 
 			#endif
 			//check if command found is a stream command
 			if(cmd_list[i].streamCommand == true)
@@ -223,7 +222,7 @@ void parseCMD(uCShell_type *cli)
                 {
                     // add the token to an array so we can send it to the handler
                     // remember these are all pointers
-                    // to the original cliMsg
+                    // to the original ucshellMsg
                     tokens_found[argumentCount] = token;
                     // increment argument counter so we can also tell the handler
                     // how many arguments to expect
@@ -234,15 +233,15 @@ void parseCMD(uCShell_type *cli)
             // check if this is a request for the help msg
             if (argumentCount && *tokens_found[0] == '?')
             {
-                cli->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
+                ptr_ucShell->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
                 _print_prompt();
-                cli->parsePending = false;
+                ptr_ucShell->parsePending = false;
                 break;
             }
 
             // call the command handler for the specific command that was matched
             // pass the number of tokens found as well as a list of the tokens
-            cli->print("\r\n");
+            ptr_ucShell->print("\r\n");
             // check if command found is a stream command
             if (cmd_list[i].streamCommand == true)
             {
@@ -261,7 +260,7 @@ void parseCMD(uCShell_type *cli)
         if (matchFound == true)
         {
             // break out of for loop, no need to cycle through rest of commands
-            cli->parsePending = false;
+            ptr_ucShell->parsePending = false;
             break;
         }
 
@@ -269,33 +268,33 @@ void parseCMD(uCShell_type *cli)
 
     if (matchFound == false)
     {
-        cli->print("\r\n\"%s\" not found!\r\n", uCShell.cliMsg);
+        ptr_ucShell->print("\r\n\"%s\" not found!\r\n", uCShell.ucshellMsg);
         _print_prompt();
     }
 
-    cleanUp(cli);
+    cleanUp(ptr_ucShell);
 
     // return pointer to handler function
 }
 
-static void cleanUp(uCShell_type *cli)
+static void cleanUp(uCShell_type *ptr_ucShell)
 {
-    cli->parsePending = false;
+    ptr_ucShell->parsePending = false;
     // clear buffer  to receive new messages and not have old text in there
     for (int i = 0; i < MESSAGE_MAX; i++)
-        uCShell.cliMsg[i] = NULL;
+        uCShell.ucshellMsg[i] = NULL;
     uCShell.msgPtr = 0;
 }
-void uCShell_run(uCShell_type *cli)
+void uCShell_run(uCShell_type *ptr_ucShell)
 {
     if (uCShell.stream == true)
     {
         // call stream function handler
         stream_Handler_ptr(0, NULL);
     }
-    else if (cli->parsePending == true)
+    else if (ptr_ucShell->parsePending == true)
     {
-        cli->parseCommand(cli);
+        ptr_ucShell->parseCommand(ptr_ucShell);
     }
 }
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[])

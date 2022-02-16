@@ -131,9 +131,9 @@ typedef struct
     char charReceived; // stores received characters
     parsechar parseChar;
 
-    char cliMsg[MESSAGE_MAX]; // stores the complete received message
+    char ucshellMsg[MESSAGE_MAX]; // stores the complete received message
     print_f print;
-    uint8_t msgPtr; // this keeps track of how much we have increment the cli.cliMsg index
+    uint8_t msgPtr; // this keeps track of how much we have increment the cli.ucshellMsg index
 
     // void(*parsecmd)(struct cliType *cli);
 } uCShell_type;
@@ -142,10 +142,10 @@ typedef struct
 
 //---------------------| Prototypes |-----------------------------------
 
-void parseCMD(uCShell_type *cli);
-void parseChar(uCShell_type *cli);
-void CL_cli_init(uCShell_type *cli, char *prompt, print_f print_function);
+void parseCMD(uCShell_type *ptr_ucShell);
+void parseChar(uCShell_type *ptr_ucShell);
+void CL_cli_init(uCShell_type *ptr_ucShell, char *prompt, print_f print_function);
 void printRegister(uint32_t regVal);
-void uCShell_run(uCShell_type *cli);
+void uCShell_run(uCShell_type *ptr_ucShell);
 bool is_uCShell_streaming(void);
 #endif
