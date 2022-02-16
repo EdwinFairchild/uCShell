@@ -22,7 +22,7 @@ jobs:
 
       - name: Build_main
         run: |
-          gcc main.c uCShell.c -o main
+          gcc main.c uCShell.c -o uCShell
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
