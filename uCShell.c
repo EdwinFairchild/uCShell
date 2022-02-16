@@ -49,11 +49,8 @@ void CL_cli_init(CL_cli_type *cli, char *prompt, print_f print_function)
     uCShell.print = print_function;
     uCShell.stream = false;
 	//register command to show supported commands
-	#if USING_WINDOWS
-	cli->registerCommand("lc", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
-	#else
 	cli->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands",false);
-	#endif
+	
 	printBanner();
 	_uCShell_print_prompt();
 
@@ -186,9 +183,10 @@ void parseCMD(CL_cli_type *cli)
 					argumentCount++;
 				}
 	        }
-#if !USING_WINDOWS //currently have issue with windows
+
 	        //check if this is a request for the help msg
-	        if (*tokens_found[0] == '?')
+            //only if arguments is non-zero
+	        if (argumentCount &&*tokens_found[0] == '?')
 	        {
 		        cli->print("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
 		        _print_prompt();
@@ -196,7 +194,7 @@ void parseCMD(CL_cli_type *cli)
 		        break; 
 	        } 
     
-#endif
+
             //call the command handler for the specific command that was matched
 	        //pass the number of tokens found as well as a list of the tokens
 			#if !USING_WINDOWS
@@ -226,7 +224,7 @@ void parseCMD(CL_cli_type *cli)
             }
 
             // check if this is a request for the help msg
-            if (*tokens_found[0] == '?')
+            if (argumentCount && *tokens_found[0] == '?')
             {
                 cli->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
                 _print_prompt();
