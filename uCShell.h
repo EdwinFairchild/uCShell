@@ -115,7 +115,7 @@ typedef void (*registerCmd)(char *cmd, char delimeter, cmd_handler handler, char
 struct uCShell_type;
 typedef void (*parsecmd)(struct uCShell_type *cli);
 typedef void (*parsechar)(struct uCShell_type *cli);
-#if USING_WINDOWS
+#if USING_DESKTOP
 typedef int (*print_f)(const char *__restrict __fmt, ...);
 #else
 typedef void (*print_f)(char *msg, ...);
@@ -137,8 +137,6 @@ typedef struct
 
     // void(*parsecmd)(struct cliType *cli);
 } uCShell_type;
-
-
 
 //---------------------| Prototypes |-----------------------------------
 

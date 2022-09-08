@@ -16,7 +16,8 @@ typedef struct
 {
     char ucshellMsg[MESSAGE_MAX]; // stores the complete received message
     print_f print;
-    uint8_t msgPtr; // this keeps track of how much we have increment the cli.ucshellMsg index
+    uint8_t msgPtr; // this keeps track of how much we have increment the
+                    // cli.ucshellMsg index
     bool stream;
 } prv_uCShell_type;
 
@@ -24,7 +25,7 @@ prv_uCShell_type uCShell;
 
 uint8_t CURRENT_NUM_OF_COMMANDS = 0;
 bool CLI_ACTIVE = true;
-char BACKSPACE = 127;
+char BACKSPACE = 0x08;
 
 // internal helpers
 static void _internal_cmd_command_list_handler(uint8_t num, char *values[]);
@@ -63,8 +64,8 @@ void CL_cli_init(uCShell_type *ptr_ucShell, char *prompt, print_f print_function
 }
 void parseChar(uCShell_type *ptr_ucShell)
 {
-    /*	If ptr_ucShell.parsePending is already true then it means a message is still
-        parsing , this current data will be ginored */
+    /*	If ptr_ucShell.parsePending is already true then it means a message is
+       still parsing , this current data will be ginored */
     if (ptr_ucShell->parsePending == false)
     {
         /*
@@ -81,7 +82,7 @@ void parseChar(uCShell_type *ptr_ucShell)
         {
             // reset temp pointer countr
             uCShell.msgPtr = 0;
-        
+
             // this flag is used to let the application know we have a command to
             // parse do not parse anything in ISR
             ptr_ucShell->parsePending = true;
@@ -106,10 +107,20 @@ void parseChar(uCShell_type *ptr_ucShell)
             if (uCShell.msgPtr > 0) // make sure we can even decrement in the first place
             {
                 uCShell.ucshellMsg[uCShell.msgPtr] = NULL;
+
                 uCShell.msgPtr--;
                 uCShell.ucshellMsg[uCShell.msgPtr] = NULL;
+                uCShell.print("\x08 \x08");
             }
         }
+/* tab , note this doesnt work in desktop environment */
+#if USING_DESKTOP == 0
+        else if (ptr_ucShell->charReceived == 0x09)
+        {
+            /* TOOD: show tab hints */
+            printHint(ptr_ucShell);
+        }
+#endif
 
         /*	if we have NOT reached the delimiter or received a backspace then
          *increment the pointer
@@ -122,8 +133,29 @@ void parseChar(uCShell_type *ptr_ucShell)
             {
                 uCShell.ucshellMsg[uCShell.msgPtr] = ptr_ucShell->charReceived;
                 uCShell.msgPtr++;
+                uCShell.print("%c", ptr_ucShell->charReceived);
             }
         }
+    }
+}
+
+void printHint(uCShell_type *ptr_ucShell)
+{
+
+    bool matchFound = false;
+    for (int i = 0; i < CURRENT_NUM_OF_COMMANDS; i++)
+    {
+        if ((memcmp(uCShell.ucshellMsg, cmd_list[i].command, strlen(uCShell.ucshellMsg))) == 0)
+        {
+            ptr_ucShell->print("\r\n>%s", cmd_list[i].command);
+            matchFound = true;
+        }
+    }
+    if (matchFound)
+    {
+        ptr_ucShell->print("\r\n");
+        _print_prompt();
+        ptr_ucShell->print("%s", uCShell.ucshellMsg);
     }
 }
 
@@ -141,7 +173,7 @@ void parseCMD(uCShell_type *ptr_ucShell)
     // retreive just the command by setting the first delimeter of strtok to
     // new line / enter / line feed etc...
     token = strtok(uCShell.ucshellMsg, " \n \r");
-    if(token == NULL)
+    if (token == NULL)
     {
         cleanUp(ptr_ucShell);
         _print_prompt();
@@ -160,62 +192,60 @@ void parseCMD(uCShell_type *ptr_ucShell)
             // so we can break out of the for loop
             matchFound = true;
 
-            // now go into the struct of matching command and use the given delimeter
-            // to extract the rest of the parameters if any
+            // now go into the struct of matching command and use the given
+            // delimeter to extract the rest of the parameters if any
             delimeter = cmd_list[i].delimeter;
 
-            // this is used to keep track of how many arguments were passed so we can
-            // tell the handler function
+            // this is used to keep track of how many arguments were passed so we
+            // can tell the handler function
             uint8_t argumentCount = 0;
 
             // start going through the string tokeninzing and using the delimeter
             while (token != NULL)
             {
-	            //get the next token
-                token = strtok(NULL,&delimeter);
-	            
-	            //check if the first token is a "?" 
-	            
-	            
-	            if (token == NULL) // if result is NULL "endof string" then we are done
-		            {
-                   
-			            break;//outof while loop
-		            }
-	            else
-	            {
-		            //add the token to an array so we can send it to the handler
-					//remember these are all pointers
-					//to the original ucshellMsg
-					tokens_found[argumentCount] = token;
-					//increment argument counter so we can also tell the handler 
-					//how many arguments to expect
-					argumentCount++;
-				}
-	        }
+                // get the next token
+                token = strtok(NULL, &delimeter);
 
-	        //check if this is a request for the help msg
-            //only if arguments is non-zero
-	        if (argumentCount &&*tokens_found[0] == '?')
-	        {
-		        ptr_ucShell->print("\r\n[HELP: %s] %s\r\n",cmd_list[i].command,  cmd_list[i].help);
-		        _print_prompt();
-		        ptr_ucShell->parsePending = false;
-		        break; 
-	        } 
-    
+                // check if the first token is a "?"
 
-            //call the command handler for the specific command that was matched
-	        //pass the number of tokens found as well as a list of the tokens
-			#if !USING_WINDOWS
-			ptr_ucShell->print("\r\n"); 
-			#endif
-			//check if command found is a stream command
-			if(cmd_list[i].streamCommand == true)
-			{
-				uCShell.stream = true ;
-				stream_Handler_ptr = cmd_list[i].cmdHandler ;
-				stream_Handler_ptr(0,NULL);
+                if (token == NULL) // if result is NULL "endof string" then we are done
+                {
+
+                    break; // outof while loop
+                }
+                else
+                {
+                    // add the token to an array so we can send it to the handler
+                    // remember these are all pointers
+                    // to the original ucshellMsg
+                    tokens_found[argumentCount] = token;
+                    // increment argument counter so we can also tell the handler
+                    // how many arguments to expect
+                    argumentCount++;
+                }
+            }
+
+            // check if this is a request for the help msg
+            // only if arguments is non-zero
+            if (argumentCount && *tokens_found[0] == '?')
+            {
+                ptr_ucShell->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
+                _print_prompt();
+                ptr_ucShell->parsePending = false;
+                break;
+            }
+
+            // call the command handler for the specific command that was matched
+            // pass the number of tokens found as well as a list of the tokens
+#if !USING_DESKTOP
+            ptr_ucShell->print("\r\n");
+#endif
+            // check if command found is a stream command
+            if (cmd_list[i].streamCommand == true)
+            {
+                uCShell.stream = true;
+                stream_Handler_ptr = cmd_list[i].cmdHandler;
+                stream_Handler_ptr(0, NULL);
 
                 // check if the first token is a "?"
 
@@ -337,27 +367,48 @@ bool is_uCShell_streaming(void)
 void printBanner(void)
 {
     uCShell.print("\r\n\r\n");
-    uCShell.print("               .cxOOxc'.                              .'lxOOxc.   \r\n");
-    uCShell.print("              .kWMMMMMN0d;.                        .;d0NMMMMMWk.  \r\n");
-    uCShell.print("              ;XMMMMMMMMMWKxc'.                 'ckKWMMMMMMMWKd.  \r\n");
-    uCShell.print("              ;XMMMMMMMMMMMMMNOo;.          .;o0NMMMMMMMMNOo;.    \r\n");
-    uCShell.print("              ;XMMMMW0kKWMMMMMMMWKxc'     ;xKWMMMMMMMWKxc'    .   \r\n");
-    uCShell.print("              ;XMMMMNl .;o0NMMMMMMMMNOoc;.,cxKWMMMN0d;.    .cxk,  \r\n");
-    uCShell.print("              ;XMMMMWd.   .'ckXWMMMMMMMMWKxc,':odc'.   .,lOXWMX;  \r\n");
-    uCShell.print("              ;XMMMMMWKd:.    .:d0NMMMMMMMMMNOo;.   .;d0WMMMMMX;  \r\n");
-    uCShell.print("              ;XMMMMMMMMWXkl,.   .,lkXWMMMMMMMMWKx:'.;d0NMMMMNO'  \r\n");
-    uCShell.print("              ;XMMMMMMMMMMMMN0d:.    .:ld0NMMMMMMMWXOl;',lxkl,.   \r\n");
-    uCShell.print("              ;XMMMMWXKWMMMMMMMWXkl,.    .,lkXWMMMMMMMWKd:'.      \r\n");
-    uCShell.print("              ;XMMMMWo.,oOXWMMMMMMMN0d:,.    .:d0NMMMMMMMWXkl,.   \r\n");
-    uCShell.print("              ;XMMMMWd.   'cxKWMMMMMMMWWXkl'.   .,lOXWMMMMMMMNk'  \r\n");
-    uCShell.print("              ;XMMMMMNOo;.   .;oONMMMMMMMMWN0d;.    .cxKWMMMMMX;  \r\n");
-    uCShell.print("              ,0WMMMMMMMWKxc'    'cxKWMMMMMMMMWKkc'.   .;oONWW0,  \r\n");
-    uCShell.print("               .:d0NMMMMMMMWXOo,.   .;oxONMMMMMMMMNOo;.    ':;.   \r\n");
-    uCShell.print("                  .,lkXWMMMMMMMWKd:.     'cxKWMMMMMMMWKl.         \r\n");
-    uCShell.print("                      .:d0NMMMMMMMWXkl,..   .;d0NMMN0d:.          \r\n");
-    uCShell.print("                         .,lkXWMMMMMMMNX0d:.   .'cc,.             \r\n");
-    uCShell.print("                             .:d0NMMMMMMMMWXx,                    \r\n");
-    uCShell.print("                                .,oOXWMMWXOl,.                    \r\n");
+    uCShell.print("               .cxOOxc'.                              "
+                  ".'lxOOxc.   \r\n");
+    uCShell.print("              .kWMMMMMN0d;.                        "
+                  ".;d0NMMMMMWk.  \r\n");
+    uCShell.print("              ;XMMMMMMMMMWKxc'.                 "
+                  "'ckKWMMMMMMMWKd.  \r\n");
+    uCShell.print("              ;XMMMMMMMMMMMMMNOo;.          "
+                  ".;o0NMMMMMMMMNOo;.    \r\n");
+    uCShell.print("              ;XMMMMW0kKWMMMMMMMWKxc'     ;xKWMMMMMMMWKxc'  "
+                  "  .   \r\n");
+    uCShell.print("              ;XMMMMNl .;o0NMMMMMMMMNOoc;.,cxKWMMMN0d;.    "
+                  ".cxk,  \r\n");
+    uCShell.print("              ;XMMMMWd.   .'ckXWMMMMMMMMWKxc,':odc'.   "
+                  ".,lOXWMX;  \r\n");
+    uCShell.print("              ;XMMMMMWKd:.    .:d0NMMMMMMMMMNOo;.   "
+                  ".;d0WMMMMMX;  \r\n");
+    uCShell.print("              ;XMMMMMMMMWXkl,.   "
+                  ".,lkXWMMMMMMMMWKx:'.;d0NMMMMNO'  \r\n");
+    uCShell.print("              ;XMMMMMMMMMMMMN0d:.    "
+                  ".:ld0NMMMMMMMWXOl;',lxkl,.   \r\n");
+    uCShell.print("              ;XMMMMWXKWMMMMMMMWXkl,.    "
+                  ".,lkXWMMMMMMMWKd:'.      \r\n");
+    uCShell.print("              ;XMMMMWo.,oOXWMMMMMMMN0d:,.    "
+                  ".:d0NMMMMMMMWXkl,.   \r\n");
+    uCShell.print("              ;XMMMMWd.   'cxKWMMMMMMMWWXkl'.   "
+                  ".,lOXWMMMMMMMNk'  \r\n");
+    uCShell.print("              ;XMMMMMNOo;.   .;oONMMMMMMMMWN0d;.    "
+                  ".cxKWMMMMMX;  \r\n");
+    uCShell.print("              ,0WMMMMMMMWKxc'    'cxKWMMMMMMMMWKkc'.   "
+                  ".;oONWW0,  \r\n");
+    uCShell.print("               .:d0NMMMMMMMWXOo,.   .;oxONMMMMMMMMNOo;.    "
+                  "':;.   \r\n");
+    uCShell.print("                  .,lkXWMMMMMMMWKd:.     'cxKWMMMMMMMWKl.   "
+                  "      \r\n");
+    uCShell.print("                      .:d0NMMMMMMMWXkl,..   .;d0NMMN0d:.    "
+                  "      \r\n");
+    uCShell.print("                         .,lkXWMMMMMMMNX0d:.   .'cc,.       "
+                  "      \r\n");
+    uCShell.print("                             .:d0NMMMMMMMMWXx,              "
+                  "      \r\n");
+    uCShell.print("                                .,oOXWMMWXOl,.              "
+                  "      \r\n");
     uCShell.print("                                    .;::;.                        "
                   "\r\n\r\n");
     uCShell.print("                        uCShell : Edwin Fairchild 2022\r\n\r\n");
