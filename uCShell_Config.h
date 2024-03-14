@@ -2,7 +2,7 @@
 #define uCSHELL_CONFIG_H
 
 // bugs still exist when runing uCShell in a PC environment
-#define USING_DESKTOP 1
+#define USING_DESKTOP 0
 // not all terminals support color codes (Mobaterm and Putty do)
 #define USE_COLORS 1
 /* TODO :
