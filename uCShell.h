@@ -34,22 +34,16 @@ register\n\r[Format] getreg GPIOA;hex or (bin)(dec)");
 
 
     }
-void USART1_IRQHandler(void)
+void USART2_IRQHandler(void)
 {
-    if ((USART1->SR & USART_SR_RXNE)) //if data has arrived on the uart
-    {
-        USART1->SR &= ~(USART_SR_RXNE);//clear interrupt
+ 
+  if((USART2->ISR & USART_ISR_RXNE) == USART_ISR_RXNE)
+  {
+    cli.charReceived = USART2->RDR;
+    cli.parseChar(&cli);
+  }
 
-        //fetch data
-        cli.charReceived = USART1->DR;
-
-        //if the character receieved is not the delimeter then echo the character
-        if(cli.charReceived != cli.delimeter)
-            USART1->DR = cli.charReceived;
-        cli.parseChar(&cli);
-    }
-
-
+  
 }//----------------------------------------------------------------
 void cmd_ok_handler(uint8_t num, char *values[])
 {
@@ -118,7 +112,12 @@ typedef void (*parsechar)(struct uCShell_type *cli);
 #if USING_DESKTOP
 typedef int (*print_f)(const char *__restrict __fmt, ...);
 #else
+#if RETARGET_PRINTF == 1
+typedef void (*print_f)(const char *__restrict__, ...);
+#else
+// can define your own print prototype here if needed
 typedef void (*print_f)(char *msg, ...);
+#endif
 #endif
 // control struct for the cli
 typedef struct

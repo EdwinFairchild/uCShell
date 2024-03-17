@@ -1,11 +1,14 @@
 #include "uCShell.h"
+#if RETARGET_PRINTF == 1
+#include "stdio.h"
+#endif
 
 #if USE_COLORS
-#define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", ptr_ucShell->prompt)
-#define _print_prompt() ptr_ucShell->print("\033[33m%s\033[m", ptr_ucShell->prompt)
+#define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", ptr_ucShell->prompt);
+#define _print_prompt() ptr_ucShell->print("\033[33m%s\033[m", ptr_ucShell->prompt);
 #else
-#define _uCShell_print_prompt() uCShell.print("%s", ptr_ucShell->prompt)
-#define _print_prompt() ptr_ucShell->print("%s", ptr_ucShell->prompt)
+#define _uCShell_print_prompt() uCShell.print("%s", ptr_ucShell->prompt);fflush(stdout);
+#define _print_prompt() ptr_ucShell->print("%s", ptr_ucShell->prompt);fflush(stdout);
 #endif
 // will hold all commands and later be searched for a match
 // when match is found the function in struct will be called
@@ -59,8 +62,13 @@ void CL_cli_init(uCShell_type *ptr_ucShell, char *prompt, print_f print_function
     uCShell.stream = false;
     // register command to show supported commands
     ptr_ucShell->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
+    ptr_ucShell->registerCommand("help", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
     printBanner();
     _uCShell_print_prompt();
+    #if RETARGET_PRINTF == 1
+        fflush(stdout);
+    #endif
+
 }
 void parseChar(uCShell_type *ptr_ucShell)
 {
@@ -86,6 +94,7 @@ void parseChar(uCShell_type *ptr_ucShell)
             // this flag is used to let the application know we have a command to
             // parse do not parse anything in ISR
             ptr_ucShell->parsePending = true;
+            
         }
         // start stop delimeters for stream commands
         else if (ptr_ucShell->charReceived == '[' && stream_Handler_ptr != NULL)
@@ -98,6 +107,9 @@ void parseChar(uCShell_type *ptr_ucShell)
             uCShell.print("\r\n");
             cleanUp(ptr_ucShell);
             _uCShell_print_prompt();
+            #if RETARGET_PRINTF == 1
+                fflush(stdout);
+            #endif
         }
         // if backspace is received the user wants to delete previous char receveid
         // so decrement the pointer so it points to previous char and set that char
@@ -134,6 +146,9 @@ void parseChar(uCShell_type *ptr_ucShell)
                 uCShell.ucshellMsg[uCShell.msgPtr] = ptr_ucShell->charReceived;
                 uCShell.msgPtr++;
                 uCShell.print("%c", ptr_ucShell->charReceived);
+                #if RETARGET_PRINTF == 1
+                fflush(stdout);
+                #endif
             }
         }
     }
@@ -156,6 +171,9 @@ void printHint(uCShell_type *ptr_ucShell)
         ptr_ucShell->print("\r\n");
         _print_prompt();
         ptr_ucShell->print("%s", uCShell.ucshellMsg);
+        #if RETARGET_PRINTF == 1
+            fflush(stdout);
+        #endif
     }
 }
 
@@ -163,7 +181,7 @@ void parseCMD(uCShell_type *ptr_ucShell)
 {
     char *token;
     // used retreive the command and tokens via strtok
-
+ 
     // will store the delimeter for a matching command
     char delimeter;
     // store found arguemtns
@@ -177,6 +195,9 @@ void parseCMD(uCShell_type *ptr_ucShell)
     {
         cleanUp(ptr_ucShell);
         _print_prompt();
+        #if RETARGET_PRINTF == 1
+            fflush(stdout);
+        #endif
         return;
     }
     //--------------------------------------| Strcmp based search
@@ -232,13 +253,16 @@ void parseCMD(uCShell_type *ptr_ucShell)
                 ptr_ucShell->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
                 _print_prompt();
                 ptr_ucShell->parsePending = false;
+                #if RETARGET_PRINTF == 1
+                    fflush(stdout);
+                #endif
                 break;
             }
 
             // call the command handler for the specific command that was matched
             // pass the number of tokens found as well as a list of the tokens
 #if !USING_DESKTOP
-            ptr_ucShell->print("\r\n");
+           // ptr_ucShell->print("\r\n");
 #endif
             // check if command found is a stream command
             if (cmd_list[i].streamCommand == true)
@@ -271,11 +295,15 @@ void parseCMD(uCShell_type *ptr_ucShell)
                 ptr_ucShell->print("\r\n[HELP: %s] %s\r\n", cmd_list[i].command, cmd_list[i].help);
                 _print_prompt();
                 ptr_ucShell->parsePending = false;
+                #if RETARGET_PRINTF == 1
+                fflush(stdout);
+                #endif
                 break;
             }
 
             // call the command handler for the specific command that was matched
             // pass the number of tokens found as well as a list of the tokens
+
             ptr_ucShell->print("\r\n");
             // check if command found is a stream command
             if (cmd_list[i].streamCommand == true)
@@ -288,7 +316,12 @@ void parseCMD(uCShell_type *ptr_ucShell)
             {
                 cmd_list[i].cmdHandler(argumentCount, tokens_found);
             }
+            //clear ucshellMsg
+            cleanUp(ptr_ucShell);
             _print_prompt();
+            #if RETARGET_PRINTF == 1
+            fflush(stdout);
+            #endif
         }
         // TODO: think of a cleaner way to handle this instead of this matchFound
         // flag
@@ -305,6 +338,9 @@ void parseCMD(uCShell_type *ptr_ucShell)
     {
         ptr_ucShell->print("\r\n\"%s\" not found!\r\n", uCShell.ucshellMsg);
         _print_prompt();
+        #if RETARGET_PRINTF == 1
+        fflush(stdout);
+        #endif
     }
 
     cleanUp(ptr_ucShell);
