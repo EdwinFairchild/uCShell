@@ -3,7 +3,7 @@
 #include "stdio.h"
 #endif
 
-#if USE_COLORS
+#if USE_COLORS == 1
 #define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", ptr_ucShell->prompt);
 #define _print_prompt() ptr_ucShell->print("\033[33m%s\033[m", ptr_ucShell->prompt);
 #else
@@ -36,6 +36,13 @@ static void cleanUp(uCShell_type *ptr_ucShell);
 void printBanner(void);
 cmd_handler stream_Handler_ptr = NULL;
 
+static void _internal_cls(uint8_t num, char *values[])
+{
+    uCShell.print("\033[2J");
+    #if RETARGET_PRINTF == 1
+    fflush(stdout);
+    #endif
+}
 static void registerCommand(char *cmd, char delimeter, cmd_handler handler, char *help, bool stream)
 {
     // register a command at index matching current number of commands
@@ -63,6 +70,8 @@ void CL_cli_init(uCShell_type *ptr_ucShell, char *prompt, print_f print_function
     // register command to show supported commands
     ptr_ucShell->registerCommand("?", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
     ptr_ucShell->registerCommand("help", ' ', _internal_cmd_command_list_handler, "Lists supported commands", false);
+    ptr_ucShell->registerCommand("cls", ' ', _internal_cls, "Clear screen", false);
+
     printBanner();
     _uCShell_print_prompt();
     #if RETARGET_PRINTF == 1
@@ -383,15 +392,15 @@ static void _internal_cmd_command_list_handler(uint8_t num, char *values[])
     {
         // print just the command
 #if USE_COLORS
-        uCShell.print("[\033[91m%s\033[97m]", cmd_list[i].command);
+        uCShell.print("\033[91m%s\033[97m", cmd_list[i].command);
 #else
         uCShell.print("[%s]", cmd_list[i].command);
 #endif
         // add padding dashes if the len of this command is shorter than len
         for (int j = 0; j < (len - strlen(cmd_list[i].command)); j++)
-            uCShell.print("-");
+            uCShell.print(" ");
         // print the help message
-        uCShell.print("| %s\r\n", cmd_list[i].help);
+        uCShell.print(" | %s\r\n", cmd_list[i].help);
     }
 }
 
