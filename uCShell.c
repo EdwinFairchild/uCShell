@@ -4,11 +4,11 @@
 #endif
 
 #if USE_COLORS == 1
-#define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", ptr_ucShell->prompt);
-#define _print_prompt() ptr_ucShell->print("\033[33m%s\033[m", ptr_ucShell->prompt);
+#define _uCShell_print_prompt() uCShell.print("\033[33m%s\033[m", ptr_ucShell->prompt)
+#define _print_prompt() ptr_ucShell->print("\033[33m%s\033[m", ptr_ucShell->prompt)
 #else
-#define _uCShell_print_prompt() uCShell.print("%s", ptr_ucShell->prompt);fflush(stdout);
-#define _print_prompt() ptr_ucShell->print("%s", ptr_ucShell->prompt);fflush(stdout);
+#define _uCShell_print_prompt() uCShell.print("%s", ptr_ucShell->prompt)
+#define _print_prompt() ptr_ucShell->print("%s", ptr_ucShell->prompt)
 #endif
 // will hold all commands and later be searched for a match
 // when match is found the function in struct will be called
